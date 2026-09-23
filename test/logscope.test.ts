@@ -77,9 +77,9 @@ test("перцентили по гистограмме — с точностью
     agg.add({ ip: "1", time: 0, tz: 0, method: "GET", path: "/", status: 200, bytes: 0, referer: "", ua: "", rt: i / 1000 });
   }
   const r = agg.report();
-  // Настоящие значения 0,5 с и 0,95 с; корзины шире на 25%, так что погрешность до ~12%.
-  assert.ok(Math.abs(r.p50 - 0.5) / 0.5 < 0.13, `p50 ${r.p50}`);
-  assert.ok(Math.abs(r.p95 - 0.95) / 0.95 < 0.13, `p95 ${r.p95}`);
+  // Настоящие значения 0,5 с и 0,95 с; корзины шире на 10%, внутри корзины — интерполяция.
+  assert.ok(Math.abs(r.p50 - 0.5) / 0.5 < 0.05, `p50 ${r.p50}`);
+  assert.ok(Math.abs(r.p95 - 0.95) / 0.95 < 0.05, `p95 ${r.p95}`);
   assert.equal(percentile([0, 0], 0.5), -1);
 });
 
@@ -99,8 +99,8 @@ test("пример: всё спрятанное находится", async () =>
   // Сканеры: оба найдены, первый — ночной.
   assert.deepEqual(r.scanners.map((s) => s.ip), ["192.0.2.250", "2001:db8:bad::1"]);
 
-  // Битая ссылка — первая среди 404, если не считать сканеров.
-  assert.ok(r.notFound.slice(0, 3).some((p) => p.key === "/catalog/old-collection"));
+  // Сканеры в 404 не попадают; битая ссылка из Telegram — в первой двойке.
+  assert.deepEqual(r.notFound.map((p) => p.key), ["/img/products/:id.webp", "/catalog/old-collection"]);
 
   // Поиск — среди самых медленных по суммарному времени.
   const slow = r.slowPaths.slice(0, 3).map((p) => p.key);

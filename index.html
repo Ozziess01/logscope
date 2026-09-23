@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Читалка логов nginx — ошибки, медленные адреса, сканеры</title>
+    <meta
+      name="description"
+      content="Откройте access.log nginx (можно .gz) и посмотрите, что происходит на сервере: ошибки, медленные адреса, сканеры, боты. Файл читается в браузере по частям и никуда не отправляется."
+    />
+    <meta name="theme-color" content="#0b0e1a" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236c4cff'/%3E%3Cpath d='M8 10h16M8 16h11M8 22h14' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="page">
+      <header class="top">
+        <a href="https://fedorov-n.ru/">← fedorov-n.ru</a>
+        <a href="https://github.com/Ozziess01/logscope">Код на GitHub</a>
+      </header>
+
+      <h1>Читалка логов nginx</h1>
+      <p class="lead">
+        Откройте access.log и посмотрите, что происходит на сервере: какие адреса падают, что
+        тормозит, кто сканирует сайт и сколько трафика от ботов. Файл читается в браузере по
+        частям и никуда не отправляется.
+      </p>
+
+      <section id="open" class="drop">
+        <input type="file" id="file" multiple hidden />
+        <p class="drop-title">
+          Перетащите лог сюда или <button class="link" id="pick">выберите файлы</button>
+        </p>
+        <p class="drop-samples">
+          Нет лога под рукой?
+          <button class="chip" id="sample">Открыть пример: сутки интернет-магазина</button>
+        </p>
+        <p class="muted">
+          Понимает стандартный формат combined, его варианты со временем ответа в конце и
+          JSON-логи. Файлы .gz распаковываются на лету. Можно выбрать сразу несколько:
+          access.log, access.log.1, access.log.2.gz — получится один отчёт.
+        </p>
+        <p class="error" id="error" hidden></p>
+      </section>
+
+      <section id="progress" class="panel progress" hidden>
+        <div class="bar"><span id="progress-bar"></span></div>
+        <p id="progress-text" class="muted"></p>
+      </section>
+
+      <div id="report" hidden>
+        <div class="filebar" id="filebar"></div>
+        <div class="filters" id="filters"></div>
+        <div class="tiles" id="tiles"></div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Запросы по времени</h2>
+            <span class="legend">
+              <i class="sw c2"></i>2xx <i class="sw c3"></i>3xx <i class="sw c4"></i>4xx <i class="sw c5"></i>5xx
+            </span>
+          </div>
+          <div id="timeline" class="chart"></div>
+          <p class="muted" id="timeline-note"></p>
+        </section>
+
+        <div class="cols">
+          <section class="panel">
+            <h2>Адреса</h2>
+            <div id="paths"></div>
+          </section>
+          <section class="panel">
+            <h2>IP-адреса</h2>
+            <div id="ips"></div>
+          </section>
+        </div>
+
+        <div class="cols">
+          <section class="panel">
+            <h2>Ошибки сервера, 5xx</h2>
+            <div id="errors5"></div>
+          </section>
+          <section class="panel">
+            <h2>Не найдено, 404</h2>
+            <p class="muted">Битые ссылки и пропавшие файлы. Запросы сканеров сюда не входят.</p>
+            <div id="errors404"></div>
+          </section>
+        </div>
+
+        <section class="panel" id="slow-panel">
+          <h2>Что тормозит</h2>
+          <p class="muted">
+            Адреса отсортированы по суммарному времени ответа: частый запрос на 300 мс нагружает
+            сервер сильнее редкого на 5 секунд.
+          </p>
+          <div id="slow"></div>
+          <h3>Самые долгие запросы</h3>
+          <div id="slowest"></div>
+        </section>
+
+        <section class="panel" id="scan-panel">
+          <h2>Похоже на сканеры уязвимостей</h2>
+          <p class="muted">
+            IP, которые искали чужие админки, файлы с паролями и старые CMS: /wp-login.php, /.env,
+            /.git/config и подобное. Таких адресов на сайте нет, поэтому сервер отвечал ошибкой.
+          </p>
+          <div id="scanners"></div>
+        </section>
+
+        <div class="cols">
+          <section class="panel">
+            <h2>Кто заходит</h2>
+            <div id="clients"></div>
+          </section>
+          <section class="panel">
+            <h2>Откуда приходят</h2>
+            <div id="referers"></div>
+          </section>
+        </div>
+
+        <div class="cols">
+          <section class="panel">
+            <h2>Коды ответа</h2>
+            <div id="statuses"></div>
+          </section>
+          <section class="panel">
+            <h2>Методы</h2>
+            <div id="methods"></div>
+          </section>
+        </div>
+
+        <section class="panel" id="unparsed-panel">
+          <h2>Строки, которые не разобрались</h2>
+          <div id="unparsed"></div>
+        </section>
+      </div>
+
+      <footer>
+        Код открыт: <a href="https://github.com/Ozziess01/logscope">github.com/Ozziess01/logscope</a>.
+        Автор — <a href="https://fedorov-n.ru/">Никита Федоров</a>.
+      </footer>
+    </div>
+    <script type="module" src="/src/ui/main.ts"></script>
+  </body>
+</html>
