@@ -246,10 +246,12 @@ function render() {
 }
 
 function renderFileBar(r: Report) {
-  const speed = lastRun.ms ? `${bytes(lastRun.bytes / (lastRun.ms / 1000))}/с` : "";
+  // Скорость — по распакованному тексту: у .gz файл в 20 раз меньше того, что пришлось разобрать.
+  const speed = lastRun.ms ? `${bytes(r.textSize / (lastRun.ms / 1000))}/с` : "";
+  const size = r.textSize > lastRun.bytes * 1.5 ? `${bytes(lastRun.bytes)}, распаковано ${bytes(r.textSize)}` : bytes(lastRun.bytes);
   $("filebar").innerHTML = `<div>
       <b>${esc(names.join(", "))}</b>
-      <span class="muted">${bytes(lastRun.bytes)} · ${num(r.lines)} ${plural(r.lines, "строка", "строки", "строк")} за ${dur(lastRun.ms / 1000)}${speed ? ` (${speed})` : ""}</span>
+      <span class="muted">${size} · ${num(r.lines)} ${plural(r.lines, "строка", "строки", "строк")} за ${dur(lastRun.ms / 1000)}${speed ? ` (${speed})` : ""}</span>
       <span class="muted">${when(r.from, r.tz)} — ${when(r.to, r.tz)}</span>
     </div>
     <button class="ghost" id="another">Открыть другие файлы</button>`;

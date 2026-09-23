@@ -39,6 +39,7 @@ async function analyzeBlob(blob: Blob, agg: Aggregator, onProgress?: OnProgress)
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
+    agg.textSize += value.length;
     const text = rest + value;
     let start = 0;
     let nl = text.indexOf("\n");

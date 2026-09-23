@@ -170,6 +170,7 @@ export interface Options {
 
 export interface Report {
   lines: number;
+  textSize: number;
   parsed: number;
   filteredOut: number;
   unparsed: number;
@@ -206,6 +207,8 @@ export interface Report {
 
 export class Aggregator {
   lines = 0;
+  /** Сколько текста прочитано после распаковки — для честной скорости по .gz. */
+  textSize = 0;
   parsed = 0;
   filteredOut = 0;
   unparsed = 0;
@@ -335,6 +338,7 @@ export class Aggregator {
     const ownHost = byCount(this.assetReferers)[0]?.[0] ?? "";
     return {
       lines: this.lines,
+      textSize: this.textSize,
       parsed: this.parsed,
       filteredOut: this.filteredOut,
       unparsed: this.unparsed,
