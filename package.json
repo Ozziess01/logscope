@@ -1,0 +1,20 @@
+{
+  "name": "logscope",
+  "private": true,
+  "type": "module",
+  "description": "Читалка логов nginx в браузере: ошибки, медленные адреса, сканеры, боты",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "sample": "node scripts/make-sample.ts",
+    "bench": "node scripts/bench.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0"
+  }
+}
